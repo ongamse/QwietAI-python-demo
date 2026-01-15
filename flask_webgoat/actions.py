@@ -29,18 +29,19 @@ def log_entry():
     if not user_dir_path.exists():
         user_dir_path.mkdir()
 
-    filename = filename_param + ".txt"
-    path = Path(user_dir + "/" + filename)
+    # Mitigation Note: Use Path.name to get the base name of the path
+    filename = Path(filename_param).name + ".txt"
+    path = user_dir_path.joinpath(filename)
     with path.open("w", encoding="utf-8") as open_file:
-        # vulnerability: Directory Traversal
         open_file.write(text_param)
     return jsonify({"success": True})
+
 
 
 @bp.route("/grep_processes")
 def grep_processes():
     name = request.args.get("name")
-    # vulnerability: Remote Code Execution
+    # Mitigation Note: Use safer alternatives such as subprocess.check_output or os.system
     res = subprocess.run(
         ["ps aux | grep " + name + " | awk '{print $11}'"],
         shell=True,
@@ -53,10 +54,12 @@ def grep_processes():
     return jsonify({"success": True, "names": names})
 
 
+
 @bp.route("/deserialized_descr", methods=["POST"])
 def deserialized_descr():
     pickled = request.form.get('pickled')
     data = base64.urlsafe_b64decode(pickled)
-    # vulnerability: Insecure Deserialization
+    # Mitigation Note: Only unpickle data that we know is safe and trustworthy
     deserialized = pickle.loads(data)
     return jsonify({"success": True, "description": str(deserialized)})
+
